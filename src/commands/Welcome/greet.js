@@ -19,7 +19,7 @@ export default {
     async execute(interaction, config, client) {
         try {
             if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
-                return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the *Manage Server* permission to use /greet.' });
+                return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the **Manage Server** permission to use `/greet`.' });
             }
 
             const subcommand = interaction.options.getSubcommand();
@@ -28,7 +28,7 @@ export default {
                 case 'dashboard':
                     return await greetDashboard.execute(interaction, config, client);
                 default:
-                    logger.warn(Unknown /greet subcommand: ${subcommand});
+                    logger.warn(`Unknown /greet subcommand: ${subcommand}`);
             }
         } catch (error) {
             if (error instanceof TitanBotError) {
