@@ -91,38 +91,3 @@ export async function getWelcomeConfig(client, guildId) {
         return null;
     }
 }
-
-/**
- * Actualiza parcialmente la configuración de bienvenida.
- * No sobrescribe configuraciones existentes que no estén incluidas.
- */
-export async function updateWelcomeConfig(client, guildId, updates = {}) {
-    if (!client?.db || !guildId) {
-        throw new Error('Database or guild ID is unavailable');
-    }
-
-    if (!updates || typeof updates !== 'object') {
-        throw new Error('Welcome configuration must be an object');
-    }
-
-    try {
-        const key = `guild:${guildId}:welcome`;
-        const current = await client.db.get(key) || {};
-
-        const updated = {
-            ...current,
-            ...updates
-        };
-
-        await client.db.set(key, updated);
-
-        return updated;
-    } catch (error) {
-        logger.error('Error updating welcome config:', {
-            guildId,
-            error: error.message
-        });
-
-        throw error;
-    }
-}
