@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
-import { logger } from '../../utils/logger.js';
-import { handleInteractionError, TitanBotError, ErrorTypes, replyUserError } from '../../utils/errorHandler.js';
-import embedCreateModule from './modules/embed_create.js';
+import { logger } from '../../../utils/logger.js';
+import { handleInteractionError, TitanBotError, ErrorTypes, replyUserError } from '../../../utils/errorHandler.js';
+import embedModule from './embedwls.js';
 
 export default {
     slashOnly: true,
@@ -55,7 +55,7 @@ export default {
 
             switch (subcommand) {
                 case 'create':
-                    return await embedCreateModule.execute(interaction, config, client);
+                    return await embedModule.execute(interaction, config, client);
                 default:
                     logger.warn(`Subcomando desconocido en /embed: ${subcommand}`);
             }
