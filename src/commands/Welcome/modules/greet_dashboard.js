@@ -174,7 +174,7 @@ export default {
     async execute(interaction, config, client) {
         try {
             const guildId = interaction.guild.id;
-            const cfg = await getWelcomeConfig(client, guildId);
+          const cfg = await getWelcomeConfig(client, guildId) || {};
 
             if (!cfg.channelId && !cfg.goodbyeChannelId) {
                 throw new TitanBotError(
