@@ -71,3 +71,58 @@ export function getDefaultWelcomeMessage() {
 export function getDefaultGoodbyeMessage() {
     return DEFAULT_TEMPLATES.goodbye;
 }
+/**
+ * Obtiene la configuración de bienvenida del servidor.
+ * La configuración se almacena directamente en la DB del bot.
+ */
+export async function getWelcomeConfig(client, guildId) {
+    if (!client?.db || !guildId) {
+        return null;
+    }
+
+    try {
+        return await client.db.get(`guild:${guildId}:welcome`) || null;
+    } catch (error) {
+        logger.error('Error getting welcome config:', {
+            guildId,
+            error: error.message
+        });
+
+        return null;
+    }
+}
+
+/**
+ * Actualiza parcialmente la configuración de bienvenida.
+ * No sobrescribe configuraciones existentes que no estén incluidas.
+ */
+export async function updateWelcomeConfig(client, guildId, updates = {}) {
+    if (!client?.db || !guildId) {
+        throw new Error('Database or guild ID is unavailable');
+    }
+
+    if (!updates || typeof updates !== 'object') {
+        throw new Error('Welcome configuration must be an object');
+    }
+
+    try {
+        const key = `guild:${guildId}:welcome`;
+        const current = await client.db.get(key) || {};
+
+        const updated = {
+            ...current,
+            ...updates
+        };
+
+        await client.db.set(key, updated);
+
+        return updated;
+    } catch (error) {
+        logger.error('Error updating welcome config:', {
+            guildId,
+            error: error.message
+        });
+
+        throw error;
+    }
+}
