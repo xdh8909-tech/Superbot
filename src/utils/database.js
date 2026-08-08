@@ -338,6 +338,73 @@ export async function markGiveawayEnded(client, giveawayId, endedData) {
 }
 
 function normalizeWelcomeConfig(raw = {}) {
+    const base = typeof raw === 'object' && raw !== null ? raw : {};
+
+    return {
+        ...base,
+
+        // Welcome
+        enabled: Boolean(base.enabled),
+        channelId: base.channelId ?? null,
+        welcomePing: Boolean(base.welcomePing),
+        welcomeMessage: base.welcomeMessage ?? 'Welcome {user} to {server}!',
+        welcomeImage: base.welcomeImage ?? null,
+
+        welcomeEmbed: {
+            title: base.welcomeEmbed?.title ?? '🎉 Welcome!',
+            description:
+                base.welcomeEmbed?.description ??
+                base.welcomeMessage ??
+                'Welcome {user} to {server}!',
+            color: base.welcomeEmbed?.color ?? getColor('success'),
+            thumbnail: base.welcomeEmbed?.thumbnail ?? true,
+            image: base.welcomeEmbed?.image ?? null,
+            footer:
+                base.welcomeEmbed?.footer ??
+                'Welcome to {server}!',
+            timestamp: base.welcomeEmbed?.timestamp ?? true,
+        },
+
+        // Goodbye
+        goodbyeEnabled: Boolean(base.goodbyeEnabled),
+        goodbyeChannelId: base.goodbyeChannelId ?? null,
+        goodbyePing: Boolean(base.goodbyePing),
+        leaveMessage:
+            base.leaveMessage ?? '{user.tag} has left the server.',
+
+        leaveEmbed: {
+            title: base.leaveEmbed?.title ?? '👋 Goodbye',
+            description:
+                base.leaveEmbed?.description ??
+                base.leaveMessage ??
+                '{user.tag} has left the server.',
+            color: base.leaveEmbed?.color ?? getColor('error'),
+            thumbnail: base.leaveEmbed?.thumbnail ?? true,
+            image: base.leaveEmbed?.image ?? null,
+            footer:
+                base.leaveEmbed?.footer ??
+                'Goodbye from {server}!',
+            timestamp: base.leaveEmbed?.timestamp ?? true,
+        },
+
+        // Auto role
+        roleIds: Array.isArray(base.roleIds) ? base.roleIds : [],
+        autoRoleDelay: base.autoRoleDelay ?? 0,
+
+        // Logs
+        joinLogs: base.joinLogs ?? {
+            enabled: false,
+            channelId: null
+        },
+
+        leaveLogs: base.leaveLogs ?? {
+            enabled: false,
+            channelId: null
+        },
+
+        dmMessage: base.dmMessage ?? ''
+    };
+}
     const base = typeof raw === "object" && raw !== null ? raw : {};
 
     const channelId = base.channelId ?? null;
