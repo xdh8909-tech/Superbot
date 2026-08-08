@@ -1,11 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
-import { getColor } from '../../config/bot.js';
-import { logger } from '../../utils/logger.js';
+import { getColor } from '../../../bot.js';
 
-/**
- * Convierte un mensaje de bienvenida con tags en un payload listo para enviar por Discord.
- * Soporta etiquetas como: {user}, {username}, {server}, {memberCount} y {embed:nombre}
- */
 export function buildWelcomePayload(client, guild, member, rawText) {
     const payload = {
         content: '',
@@ -14,17 +9,13 @@ export function buildWelcomePayload(client, guild, member, rawText) {
 
     if (!rawText) return payload;
 
-    // Detectar etiqueta {embed:nombre}
     const embedMatch = rawText.match(/\{embed:([a-zA-Z0-9_\-]+)\}/i);
 
     if (embedMatch) {
         const embedName = embedMatch[1].toLowerCase().trim();
-        
-        // Extraer el texto fuera de la etiqueta {embed:...}
         const cleanedText = rawText.replace(embedMatch[0], '').trim();
         payload.content = replaceVariables(cleanedText, member, guild);
 
-        // Buscar el embed guardado
         const embedKey = `${guild.id}:${embedName}`;
         const savedEmbed = client.customEmbeds?.get(embedKey);
 
@@ -55,16 +46,12 @@ export function buildWelcomePayload(client, guild, member, rawText) {
             payload.embeds.push(builtEmbed);
         }
     } else {
-        // Si no se especifica embed, se envía únicamente el texto plano con variables reemplazadas
         payload.content = replaceVariables(rawText, member, guild);
     }
 
     return payload;
 }
 
-/**
- * Reemplaza las variables estándar de Discord
- */
 function replaceVariables(text, member, guild) {
     if (!text) return '';
     return text
