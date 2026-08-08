@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import { getColor } from '../config/bot.js';
+import { getColor } from '../../config/bot.js'; // 2 niveles hacia atrás: de /commands/Welcome -> /src -> /config
 
 /**
  * Convierte un mensaje de bienvenida con tags en un payload listo para enviar por Discord.
