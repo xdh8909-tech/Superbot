@@ -1,95 +1,71 @@
-import { EmbedBuilder } from 'discord.js';
-import { getColor } from '../../../config/bot.js';
-import { updateWelcomeConfig } from '../../../utils/database.js';
-import { formatWelcomeMessage, truncateForEmbedField } from '../../../utils/welcome.js';
-import { logger } from '../../../utils/logger.js';
-import { InteractionHelper } from '../../../utils/interactionHelper.js';
-import { ErrorTypes, replyUserError } from '../../../utils/errorHandler.js';
+import { SlashCommandBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
+import { logger } from '../../utils/logger.js';
+import { handleInteractionError, TitanBotError, ErrorTypes, replyUserError } from '../../utils/errorHandler.js';
+import welcomeSetup from './modules/welcome_setup.js';
 
 export default {
-    async execute(interaction) {
-        const { options, guild, client } = interaction;
+    slashOnly: true,
+    data: new SlashCommandBuilder()
+        .setName('welcome')
+        .setDescription('Configure and create custom embed welcome messages')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
+        .addSubcommand(subcommand =>
+            subcommand
+                .setName('setup')
+                .setDescription('Set up a fully customizable welcome embed')
+                .addChannelOption(option =>
+                    option.setName('channel')
+                        .setDescription('The channel to send welcome messages to')
+                        .addChannelTypes(ChannelType.GuildText)
+                        .setRequired(true))
+                .addStringOption(option =>
+                    option.setName('title')
+                        .setDescription('Title for the welcome embed')
+                        .setRequired(true))
+                .addStringOption(option =>
+                    option.setName('message')
+                        .setDescription('Welcome text ({user}, {username}, {server}, {memberCount})')
+                        .setRequired(true))
+                .addStringOption(option =>
+                    option.setName('color')
+                        .setDescription('Hex color code (e.g. #d9510c)')
+                        .setRequired(false))
+                .addStringOption(option =>
+                    option.setName('image')
+                        .setDescription('URL of the large banner image')
+                        .setRequired(false))
+                .addStringOption(option =>
+                    option.setName('thumbnail')
+                        .setDescription('URL for small image or write "user" for member avatar')
+                        .setRequired(false))
+                .addStringOption(option =>
+                    option.setName('footer')
+                        .setDescription('Footer text at the bottom')
+                        .setRequired(false))
+                .addBooleanOption(option =>
+                    option.setName('ping')
+                        .setDescription('Whether to ping the user in the channel')
+                        .setRequired(false))),
 
-        const channel = options.getChannel('channel');
-        const title = options.getString('title');
-        const message = options.getString('message');
-        const colorInput = options.getString('color');
-        const image = options.getString('image');
-        const thumbnailInput = options.getString('thumbnail');
-        const footerText = options.getString('footer');
-        const ping = options.getBoolean('ping') ?? false;
-
-        if (image) {
-            try {
-                new URL(image);
-            } catch (e) {
-                return await replyUserError(interaction, { 
-                    type: ErrorTypes.VALIDATION, 
-                    message: 'Ingresa una URL de imagen válida (debe comenzar con http:// o https://)' 
-                });
-            }
-        }
-
+    async execute(interaction, config, client) {
         try {
-            // Guarda los datos del Embed en la base de datos
-            await updateWelcomeConfig(client, guild.id, {
-                enabled: true,
-                channelId: channel.id,
-                welcomeTitle: title,
-                welcomeMessage: message,
-                welcomeColor: colorInput || undefined,
-                welcomeImage: image || undefined,
-                welcomeThumbnail: thumbnailInput || undefined,
-                welcomeFooter: footerText || undefined,
-                welcomePing: ping
-            });
-
-            logger.info(`[Welcome Embed] Configurado por ${interaction.user.tag} en ${guild.name} (${guild.id})`);
-
-            const formattedMessage = formatWelcomeMessage(message, {
-                user: interaction.user,
-                guild
-            });
-
-            let embedColor = getColor('primary');
-            if (colorInput) {
-                const cleanHex = colorInput.replace('#', '');
-                const parsedColor = parseInt(cleanHex, 16);
-                if (!isNaN(parsedColor)) {
-                    embedColor = parsedColor;
-                }
+            if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+                return await replyUserError(interaction, { type: ErrorTypes.PERMISSION, message: 'You need the **Manage Server** permission to use `/welcome`.' });
             }
 
-            // Muestra una vista previa exacta de cómo quedará el Embed
-            const previewEmbed = new EmbedBuilder()
-                .setTitle(title)
-                .setDescription(truncateForEmbedField(formattedMessage))
-                .setColor(embedColor)
-                .setTimestamp();
+            const subcommand = interaction.options.getSubcommand();
 
-            if (image) previewEmbed.setImage(image);
-
-            if (thumbnailInput) {
-                if (thumbnailInput.toLowerCase() === 'user') {
-                    previewEmbed.setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }));
-                } else {
-                    previewEmbed.setThumbnail(thumbnailInput);
-                }
+            switch (subcommand) {
+                case 'setup':
+                    return await welcomeSetup.execute(interaction, config, client);
+                default:
+                    logger.warn(`Unknown /welcome subcommand: ${subcommand}`);
             }
-
-            if (footerText) previewEmbed.setFooter({ text: footerText });
-
-            await InteractionHelper.safeEditReply(interaction, {
-                content: `✅ **¡Mensaje de bienvenida en Embed configurado exitosamente en ${channel}!**\nVista previa:`,
-                embeds: [previewEmbed]
-            });
-
         } catch (error) {
-            logger.error(`[Welcome Embed] Error al configurar embed en ${guild.id}:`, error);
-            await replyUserError(interaction, { 
-                type: ErrorTypes.UNKNOWN, 
-                message: 'Ocurrió un error al guardar la configuración en la base de datos.' 
-            });
+            if (error instanceof TitanBotError) {
+                return await replyUserError(interaction, { type: ErrorTypes.CONFIGURATION, message: error.userMessage || 'Something went wrong.' });
+            }
+            await handleInteractionError(interaction, error, { command: 'welcome' });
         }
-    }
+    },
 };
