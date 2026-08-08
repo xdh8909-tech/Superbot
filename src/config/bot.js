@@ -650,3 +650,159 @@ export function getRandomColor() {
 
 export default botConfig;
 
+
+
+
+import os
+import discord
+from discord.ext import commands
+from discord import app_commands, Interaction, ChannelType
+
+intents = discord.Intents.default()
+intents.members = True
+intents.message_content = True
+
+class MiBot(commands.Bot):
+    def __init__(self):
+        super().__init__(command_prefix="!", intents=intents)
+        
+    async def setup_hook(self):
+        await self.tree.sync()
+
+bot = MiBot()
+
+CONFIGURACION_BIENVENIDA = {
+    "canal_id": None
+}
+
+class SelectCanalView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=180)
+
+    @discord.ui.select(
+        cls=discord.ui.ChannelSelect,
+        channel_types=[ChannelType.text],
+        placeholder="Selecciona el canal para las bienvenidas..."
+    )
+    async def select_canal(self, interaction: Interaction, select: discord.ui.ChannelSelect):
+        canal_seleccionado = select.values[0]
+        CONFIGURACION_BIENVENIDA["canal_id"] = canal_seleccionado.id
+        
+        embed_prueba = discord.Embed(
+            title="¡Bienvenido/a al servidor!",
+            description=f"Hola {interaction.user.mention}, ¡este es un ejemplo de cómo se verá el mensaje de bienvenida!",
+            color=discord.Color.blue()
+        )
+        embed_prueba.set_thumbnail(url=interaction.user.display_avatar.url)
+        embed_prueba.set_footer(text=f"ID del usuario: {interaction.user.id}")
+
+        await interaction.response.send_message(
+            content=f"✅ **Configuración guardada:** El canal de bienvenidas ahora es {canal_seleccionado.mention}.\nVista previa:",
+            embed=embed_prueba,
+            ephemeral=True
+        )
+
+@bot.tree.command(name="config_bienvenida", description="Configura el canal para los mensajes de bienvenida.")
+@app_commands.checks.has_permissions(administrator=True)
+async def config_bienvenida(interaction: Interaction):
+    view = SelectCanalView()
+    await interaction.response.send_message(
+        content="⚙️ **Configuración de Bienvenidas**\nSelecciona el canal donde deseas que se envíen las bienvenidas:",
+        view=view,
+        ephemeral=True
+    )
+
+@bot.event
+async def on_member_join(member: discord.Member):
+    canal_id = CONFIGURACION_BIENVENIDA.get("canal_id")
+    if canal_id:
+        canal = member.guild.get_channel(canal_id)
+        if canal:
+            embed = discord.Embed(
+                title="¡Bienvenido/a al servidor!",
+                description=f"Hola {member.mention}, nos alegra mucho tenerte aquí. ¡Disfruta tu estancia!",
+                color=discord.Color.blue()
+            )
+            embed.add_field(name="Miembro N°", value=f"#{len(member.guild.members)}", inline=True)
+            embed.set_thumbnail(url=member.display_avatar.url)
+            embed.set_footer(text=f"ID del usuario: {member.id}")
+
+            await canal.send(embed=embed)
+
+TOKEN = os.getenv("import os
+import discord
+from discord.ext import commands
+from discord import app_commands, Interaction, ChannelType
+
+intents = discord.Intents.default()
+intents.members = True
+intents.message_content = True
+
+class MiBot(commands.Bot):
+    def __init__(self):
+        super().__init__(command_prefix="!", intents=intents)
+        
+    async def setup_hook(self):
+        await self.tree.sync()
+
+bot = MiBot()
+
+CONFIGURACION_BIENVENIDA = {
+    "canal_id": None
+}
+
+class SelectCanalView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=180)
+
+    @discord.ui.select(
+        cls=discord.ui.ChannelSelect,
+        channel_types=[ChannelType.text],
+        placeholder="Selecciona el canal para las bienvenidas..."
+    )
+    async def select_canal(self, interaction: Interaction, select: discord.ui.ChannelSelect):
+        canal_seleccionado = select.values[0]
+        CONFIGURACION_BIENVENIDA["canal_id"] = canal_seleccionado.id
+        
+        embed_prueba = discord.Embed(
+            title="¡Bienvenido/a al servidor!",
+            description=f"Hola {interaction.user.mention}, ¡este es un ejemplo de cómo se verá el mensaje de bienvenida!",
+            color=discord.Color.blue()
+        )
+        embed_prueba.set_thumbnail(url=interaction.user.display_avatar.url)
+        embed_prueba.set_footer(text=f"ID del usuario: {interaction.user.id}")
+
+        await interaction.response.send_message(
+            content=f"✅ **Configuración guardada:** El canal de bienvenidas ahora es {canal_seleccionado.mention}.\nVista previa:",
+            embed=embed_prueba,
+            ephemeral=True
+        )
+
+@bot.tree.command(name="config_bienvenida", description="Configura el canal para los mensajes de bienvenida.")
+@app_commands.checks.has_permissions(administrator=True)
+async def config_bienvenida(interaction: Interaction):
+    view = SelectCanalView()
+    await interaction.response.send_message(
+        content="⚙️ **Configuración de Bienvenidas**\nSelecciona el canal donde deseas que se envíen las bienvenidas:",
+        view=view,
+        ephemeral=True
+    )
+
+@bot.event
+async def on_member_join(member: discord.Member):
+    canal_id = CONFIGURACION_BIENVENIDA.get("canal_id")
+    if canal_id:
+        canal = member.guild.get_channel(canal_id)
+        if canal:
+            embed = discord.Embed(
+                title="¡Bienvenido/a al servidor!",
+                description=f"Hola {member.mention}, nos alegra mucho tenerte aquí. ¡Disfruta tu estancia!",
+                color=discord.Color.blue()
+            )
+            embed.add_field(name="Miembro N°", value=f"#{len(member.guild.members)}", inline=True)
+            embed.set_thumbnail(url=member.display_avatar.url)
+            embed.set_footer(text=f"ID del usuario: {member.id}")
+
+            await canal.send(embed=embed)
+
+
