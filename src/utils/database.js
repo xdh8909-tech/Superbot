@@ -405,52 +405,6 @@ function normalizeWelcomeConfig(raw = {}) {
         dmMessage: base.dmMessage ?? ''
     };
 }
-    const base = typeof raw === "object" && raw !== null ? raw : {};
-
-    const channelId = base.channelId ?? null;
-    const goodbyeChannelId = base.goodbyeChannelId ?? null;
-
-    const welcomeMessage = base.welcomeMessage ?? "Welcome {user} to {server}!";
-    const leaveMessage = base.leaveMessage ?? "{user.tag} has left the server.";
-
-    const welcomeEmbed = base.welcomeEmbed ?? {
-        title: "🎉 Welcome!",
-        description: "Welcome {user} to {server}!",
-        color: getColor("success"),
-        thumbnail: true,
-        footer: "Welcome to {server}!"
-    };
-
-    const leaveEmbed = base.leaveEmbed ?? {
-        title: "👋 Goodbye",
-        description: "{user.tag} has left the server.",
-        color: getColor("error"),
-        thumbnail: true,
-        footer: "Goodbye from {server}!"
-    };
-
-    const roleIds = Array.isArray(base.roleIds) ? base.roleIds : [];
-
-    return {
-        ...base,
-        enabled: Boolean(base.enabled),
-        channelId,
-        welcomeMessage,
-        welcomeEmbed,
-        welcomePing: Boolean(base.welcomePing),
-        welcomeImage: base.welcomeImage ?? null,
-        goodbyeEnabled: Boolean(base.goodbyeEnabled),
-        goodbyeChannelId,
-        leaveMessage,
-        leaveEmbed,
-        dmMessage: base.dmMessage ?? "",
-        goodbyePing: Boolean(base.goodbyePing),
-        roleIds,
-        autoRoleDelay: base.autoRoleDelay ?? 0,
-        joinLogs: base.joinLogs ?? { enabled: false, channelId: null },
-        leaveLogs: base.leaveLogs ?? { enabled: false, channelId: null }
-    };
-}
 
 export async function getWelcomeConfig(client, guildId) {
     if (!client.db) {
