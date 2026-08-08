@@ -370,7 +370,7 @@ export const botConfig = {
   // =========================
   welcome: {
     // Welcome template posted when a user joins.
-    // Placeholders: {user}, {server}, {memberCount}
+    // Placeholders: {user}, {server}, {memberCount}, {embed:}
     defaultWelcomeMessage:
       "Welcome {user} to {server}! We now have {memberCount} members!",
     // Goodbye template posted when a user leaves.
@@ -649,3 +649,48 @@ export function getRandomColor() {
 }
 
 export default botConfig;
+
+import discord
+from discord.ext import commands
+
+# Es necesario activar los intents de miembros
+intents = discord.Intents.default()
+intents.members = True  
+intents.message_content = True
+
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+# ID del canal donde se enviarán las bienvenidas (Copia el ID dando clic derecho sobre el canal)
+CANAL_BIENVENIDA_ID = 123456789012345678  
+
+@bot.event
+async def on_ready():
+    print(f"Bot conectado como {bot.user}")
+
+@bot.event
+async def on_member_join(member):
+    # Obtener el canal de bienvenida por su ID
+    canal = bot.get_channel(CANAL_BIENVENIDA_ID)
+    
+    if canal:
+        # Crear la tarjeta enriquecida (Embed)
+        embed = discord.Embed(
+            title="¡Bienvenido/a al servidor!",
+            description=f"Hola {member.mention}, nos alegra mucho tenerte aquí. ¡Disfruta tu estancia!",
+            color=discord.Color.blue()
+        )
+        
+        # Campos de información adicional (opcional)
+        embed.add_field(name="Miembro N°", value=f"#{len(member.guild.members)}", inline=True)
+        
+        # Imagen de perfil del usuario como miniatura
+        embed.set_thumbnail(url=member.display_avatar.url)
+        
+        # Pie de página y marca de tiempo
+        embed.set_footer(text=f"ID del usuario: {member.id}")
+        
+        # Enviar el embed al canal
+        await canal.send(embed=embed)
+
+# Reemplaza 'TU_TOKEN_AQUÍ' con el token de tu bot
+bot.run("TU_TOKEN_AQUÍ")
