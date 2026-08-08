@@ -5,8 +5,12 @@ import {
     updateWelcomeConfig,
     formatWelcomeMessage,
     truncateForEmbedField
+} from '../../utils/welcome.js';import {
+    getWelcomeConfig,
+    updateWelcomeConfig,
+    formatWelcomeMessage,
+    truncateForEmbedField
 } from '../../utils/welcome.js';
-import { formatWelcomeMessage, truncateForEmbedField } from '../../utils/welcome.js';
 import { logger } from '../../utils/logger.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
 import { ErrorTypes, replyUserError } from '../../utils/errorHandler.js';
