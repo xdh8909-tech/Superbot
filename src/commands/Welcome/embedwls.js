@@ -1,8 +1,8 @@
 import { EmbedBuilder } from 'discord.js';
-import { getColor } from '../../../bot.js';
-import { InteractionHelper } from '../../../utils/interactionHelper.js';
-import { logger } from '../../../utils/logger.js';
-import { ErrorTypes, replyUserError } from '../../../utils/errorHandler.js';
+import { getColor } from '../../config/bot.js'; // Sube a /commands y luego a /src para entrar a /config
+import { InteractionHelper } from '../../utils/interactionHelper.js';
+import { logger } from '../../utils/logger.js';
+import { ErrorTypes, replyUserError } from '../../utils/errorHandler.js';
 
 export default {
     async execute(interaction, config, client) {
