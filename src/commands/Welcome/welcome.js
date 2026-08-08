@@ -1,6 +1,11 @@
 import { getColor } from '../../config/bot.js';
 import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, MessageFlags } from 'discord.js';
-import { getWelcomeConfig, updateWelcomeConfig } from '../../utils/database.js';
+import {
+    getWelcomeConfig,
+    updateWelcomeConfig,
+    formatWelcomeMessage,
+    truncateForEmbedField
+} from '../../utils/welcome.js';
 import { formatWelcomeMessage, truncateForEmbedField } from '../../utils/welcome.js';
 import { logger } from '../../utils/logger.js';
 import { InteractionHelper } from '../../utils/interactionHelper.js';
