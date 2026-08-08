@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import { getColor } from '../../../bot.js';
+import { getColor } from '../../config/bot.js';
 
 export function buildWelcomePayload(client, guild, member, rawText) {
     const payload = {
