@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
-import { logger } from '../../../utils/logger.js';
-import { handleInteractionError, TitanBotError, ErrorTypes, replyUserError } from '../../../utils/errorHandler.js';
-import embedModule from './embedwls.js';
+import { logger } from '../../utils/logger.js';
+import { handleInteractionError, TitanBotError, ErrorTypes, replyUserError } from '../../utils/errorHandler.js';
+import embedModule from './embedwls.js'; // Mismo nivel (./)
 
 export default {
     slashOnly: true,
