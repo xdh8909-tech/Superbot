@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import { getColor } from '../../../config/bot.js';
+import { getColor } from '../../../bot.js';
 import { InteractionHelper } from '../../../utils/interactionHelper.js';
 import { logger } from '../../../utils/logger.js';
 import { ErrorTypes, replyUserError } from '../../../utils/errorHandler.js';
@@ -36,13 +36,11 @@ export default {
                 footer
             };
 
-            // Estructura de almacenamiento centralizado por Servidor
             if (!client.customEmbeds) client.customEmbeds = new Map();
             client.customEmbeds.set(`${guild.id}:${embedName}`, embedData);
 
             logger.info(`[Embed Creator] Embed '${embedName}' guardado para el servidor ${guild.id}`);
 
-            // Renderizar la vista previa del embed creado
             const previewEmbed = new EmbedBuilder()
                 .setColor(getColor(colorInput, getColor('primary')))
                 .setTimestamp();
