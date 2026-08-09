@@ -21,9 +21,12 @@ export default {
     .addSubcommand(sc => sc.setName('set-title').setDescription('Establece el título del embed').addStringOption(o => o.setName('title').setDescription('Título (usa placeholders)').setRequired(true)))
     .addSubcommand(sc => sc.setName('set-description').setDescription('Establece la descripción del embed').addStringOption(o => o.setName('description').setDescription('Descripción (usa placeholders)').setRequired(true)))
     .addSubcommand(sc => sc.setName('set-color').setDescription('Establece el color del embed (hex)').addStringOption(o => o.setName('color').setDescription('#57F287 o 0x57F287').setRequired(true)))
-    .addSubcommand(sc => sc.setName('set-thumbnail').setDescription('Establece la thumbnail (URL)').addStringOption(o => o.setName('url').setDescription('URL de la thumbnail').setRequired(true)))
-    .addSubcommand(sc => sc.setName('set-image').setDescription('Establece la imagen grande del embed (URL)').addStringOption(o => o.setName('url').setDescription('URL de la imagen').setRequired(true)))
+    .addSubcommand(sc => sc.setName('set-thumbnail').setDescription('Establece la thumbnail (URL o usar avatar)').addStringOption(o => o.setName('url').setDescription('URL de la thumbnail').setRequired(false)).addBooleanOption(o => o.setName('use_avatar').setDescription('Usar avatar del usuario').setRequired(false)))
+    .addSubcommand(sc => sc.setName('set-image').setDescription('Establece la imagen grande del embed (URL o usar avatar)').addStringOption(o => o.setName('url').setDescription('URL de la imagen').setRequired(false)).addBooleanOption(o => o.setName('use_avatar').setDescription('Usar avatar del usuario').setRequired(false)))
+    .addSubcommand(sc => sc.setName('set-author').setDescription('Establece el author del embed').addStringOption(o => o.setName('name').setDescription('Nombre del author').setRequired(true)).addStringOption(o => o.setName('icon').setDescription('Icon URL').setRequired(false)).addStringOption(o => o.setName('url').setDescription('Author URL').setRequired(false)))
+    .addSubcommand(sc => sc.setName('set-url').setDescription('Establece la URL del embed').addStringOption(o => o.setName('url').setDescription('URL').setRequired(true)))
     .addSubcommand(sc => sc.setName('set-footer').setDescription('Establece el footer').addStringOption(o => o.setName('text').setDescription('Texto del footer').setRequired(true)).addStringOption(o => o.setName('icon').setDescription('Icon URL').setRequired(false)))
+    .addSubcommand(sc => sc.setName('set-timestamp').setDescription('Activa/desactiva timestamp del embed').addBooleanOption(o => o.setName('enabled').setDescription('true = incluir timestamp').setRequired(true)))
 
     .addSubcommand(sc => sc.setName('add-field').setDescription('Añade un campo al embed').addStringOption(o => o.setName('name').setDescription('Nombre del campo').setRequired(true)).addStringOption(o => o.setName('value').setDescription('Valor del campo').setRequired(true)).addBooleanOption(o => o.setName('inline').setDescription('Mostrar inline').setRequired(false)))
     .addSubcommand(sc => sc.setName('remove-field').setDescription('Elimina un campo por índice (0-based)').addIntegerOption(o => o.setName('index').setDescription('Índice del campo').setRequired(true)))
@@ -143,16 +146,48 @@ export default {
 
     if (sub === 'set-thumbnail') {
       const url = interaction.options.getString('url');
-      tpl.thumbnail = { url };
+      const useAvatar = interaction.options.getBoolean('use_avatar');
+      if (useAvatar) {
+        tpl.thumbnail = { url: '{user.avatar}' };
+      } else if (url) {
+        tpl.thumbnail = { url };
+      } else {
+        return interaction.reply({ content: 'Proporciona una URL o marca use_avatar=true.', ephemeral: true });
+      }
       await persist(tpl);
       return interaction.reply({ content: 'Thumbnail actualizada.', ephemeral: true });
     }
 
     if (sub === 'set-image') {
       const url = interaction.options.getString('url');
-      tpl.image = { url };
+      const useAvatar = interaction.options.getBoolean('use_avatar');
+      if (useAvatar) {
+        tpl.image = { url: '{user.avatar}' };
+      } else if (url) {
+        tpl.image = { url };
+      } else {
+        return interaction.reply({ content: 'Proporciona una URL o marca use_avatar=true.', ephemeral: true });
+      }
       await persist(tpl);
       return interaction.reply({ content: 'Imagen del embed actualizada.', ephemeral: true });
+    }
+
+    if (sub === 'set-author') {
+      const name = interaction.options.getString('name');
+      const icon = interaction.options.getString('icon');
+      const url = interaction.options.getString('url');
+      tpl.author = { name };
+      if (icon) tpl.author.icon_url = icon;
+      if (url) tpl.author.url = url;
+      await persist(tpl);
+      return interaction.reply({ content: 'Author actualizado.', ephemeral: true });
+    }
+
+    if (sub === 'set-url') {
+      const url = interaction.options.getString('url');
+      tpl.url = url;
+      await persist(tpl);
+      return interaction.reply({ content: 'URL del embed actualizada.', ephemeral: true });
     }
 
     if (sub === 'set-footer') {
@@ -162,6 +197,13 @@ export default {
       if (icon) tpl.footer.icon_url = icon;
       await persist(tpl);
       return interaction.reply({ content: 'Footer actualizado.', ephemeral: true });
+    }
+
+    if (sub === 'set-timestamp') {
+      const enabled = interaction.options.getBoolean('enabled');
+      tpl.timestamp = !!enabled;
+      await persist(tpl);
+      return interaction.reply({ content: `Timestamp ${enabled ? 'activado' : 'desactivado'}.`, ephemeral: true });
     }
 
     if (sub === 'add-field') {

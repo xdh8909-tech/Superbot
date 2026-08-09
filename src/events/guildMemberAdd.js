@@ -5,10 +5,13 @@ import { formatWelcomeMessage, getWelcomeConfig } from '../utils/welcome.js';
 function getPlaceholders(member) {
   return {
     '{user}': `<@${member.id}>`,
+    '{user.mention}': `<@${member.id}>`,
     '{user.tag}': member.user.tag,
     '{user.username}': member.user.username,
     '{user.avatar}': member.user.displayAvatarURL({ extension: 'png', size: 512 }),
     '{server}': member.guild.name,
+    '{server.name}': member.guild.name,
+    '{guild.name}': member.guild.name,
     '{membercount}': String(member.guild.memberCount)
   };
 }
@@ -102,6 +105,51 @@ function buildDefaultEmbed(member, description) {
     .setTimestamp();
 }
 
+function buildActionRowsFromConfig(componentsConfig) {
+  if (!Array.isArray(componentsConfig)) return [];
+  const rows = [];
+  for (const rowConfig of componentsConfig) {
+    try {
+      const row = new ActionRowBuilder();
+      if (!Array.isArray(rowConfig.components)) continue;
+      for (const comp of rowConfig.components) {
+        if (!comp || typeof comp !== 'object') continue;
+        if (comp.type === 'button') {
+          const style = (comp.style || 'Link').toLowerCase();
+          let btnStyle = ButtonStyle.Link;
+          switch (style) {
+            case 'primary': btnStyle = ButtonStyle.Primary; break;
+            case 'secondary': btnStyle = ButtonStyle.Secondary; break;
+            case 'success': btnStyle = ButtonStyle.Success; break;
+            case 'danger': btnStyle = ButtonStyle.Danger; break;
+            default: btnStyle = ButtonStyle.Link; break;
+          }
+
+          const builder = new ButtonBuilder()
+            .setLabel(comp.label || 'Button')
+            .setStyle(btnStyle);
+
+          if (btnStyle === ButtonStyle.Link) {
+            if (comp.url) builder.setURL(comp.url);
+            else continue; // link buttons require URL
+          } else {
+            if (comp.customId) builder.setCustomId(comp.customId);
+            else builder.setCustomId(`gs_btn_${Math.random().toString(36).slice(2, 9)}`);
+          }
+
+          if (comp.emoji) builder.setEmoji(comp.emoji);
+          row.addComponents(builder);
+        }
+      }
+      rows.push(row);
+    } catch (err) {
+      // ignore invalid component
+      continue;
+    }
+  }
+  return rows;
+}
+
 export default {
   name: 'guildMemberAdd',
   async execute(member, client) {
@@ -123,16 +171,36 @@ export default {
         try {
           const parsed = typeof config.embed_template === 'string' ? JSON.parse(config.embed_template) : config.embed_template;
           if (parsed.useGeneratedImage === true || parsed.use_generated_image === true) useGeneratedImage = true;
+          // remove the flag so it doesn't confuse EmbedBuilder
           delete parsed.useGeneratedImage;
           delete parsed.use_generated_image;
 
           const replaced = replacePlaceholders(parsed, member);
 
+          // If color is a hex string convert to int
           if (replaced.color && typeof replaced.color === 'string' && replaced.color.startsWith('#')) {
             replaced.color = parseInt(replaced.color.replace('#', ''), 16);
           }
 
+          // Create embed from object. EmbedBuilder accepts raw data in constructor
           embed = new EmbedBuilder(replaced);
+
+          // Apply author and timestamp explicitly if present (safer across versions)
+          if (replaced.author && replaced.author.name) {
+            embed.setAuthor({
+              name: replaced.author.name,
+              iconURL: replaced.author.icon_url || replaced.author.iconURL || undefined,
+              url: replaced.author.url || undefined
+            });
+          }
+
+          if (replaced.timestamp === true || replaced.timestamp === 'now') {
+            embed.setTimestamp();
+          } else if (replaced.timestamp && typeof replaced.timestamp === 'string') {
+            const t = Date.parse(replaced.timestamp);
+            if (!Number.isNaN(t)) embed.setTimestamp(new Date(t));
+          }
+
         } catch (err) {
           logger.warn('Embed template inválido para guild', member.guild.id, err);
           embed = buildDefaultEmbed(member, description);
@@ -154,12 +222,22 @@ export default {
         }
       }
 
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setLabel('Leer reglas').setStyle(ButtonStyle.Link).setURL('https://tuservidor/regras').setEmoji('📜'),
-        new ButtonBuilder().setLabel('Seleccionar roles').setStyle(ButtonStyle.Primary).setCustomId('welcome_select_roles')
-      );
+      // Build components: prefer components defined in embed_template, fallback to default row
+      let componentRows = [];
+      const rawTemplate = config.embed_template && typeof config.embed_template === 'object' ? config.embed_template : (config.embed_template ? JSON.parse(config.embed_template) : null);
+      if (rawTemplate && rawTemplate.components) {
+        componentRows = buildActionRowsFromConfig(rawTemplate.components);
+      }
 
-      await channel.send({ embeds: [embed], components: [row], files });
+      if (!componentRows || componentRows.length === 0) {
+        const row = new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setLabel('Leer reglas').setStyle(ButtonStyle.Link).setURL('https://tuservidor/regras').setEmoji('📜'),
+          new ButtonBuilder().setLabel('Seleccionar roles').setStyle(ButtonStyle.Primary).setCustomId('welcome_select_roles')
+        );
+        componentRows = [row];
+      }
+
+      await channel.send({ embeds: [embed], components: componentRows, files });
     } catch (err) {
       logger.error('Error en welcome handler:', err);
     }
