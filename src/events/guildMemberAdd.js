@@ -1,5 +1,4 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import Canvas from 'canvas';
 import { logger } from '../utils/logger.js';
 import { formatWelcomeMessage, getWelcomeConfig } from '../utils/welcome.js';
 
@@ -37,6 +36,14 @@ function replacePlaceholders(obj, member) {
 }
 
 async function generateWelcomeImage(member) {
+  // Lazy-load canvas only when needed to avoid requiring native deps in production.
+  let Canvas;
+  try {
+    Canvas = (await import('canvas')).default || (await import('canvas'));
+  } catch (err) {
+    throw new Error('Canvas not available: ' + err.message);
+  }
+
   const width = 1024;
   const height = 350;
   const canvas = Canvas.createCanvas(width, height);
@@ -109,12 +116,13 @@ export default {
       const description = customMessage ? formatWelcomeMessage(customMessage, { user: member.user, guild: member.guild }) : `¡Bienvenido/a, <@${member.id}>! Somos ${member.guild.name}.`;
 
       let embed = null;
-      let useGeneratedImage = true;
+      // Default to NOT generating images to avoid native canvas deps on Railway.
+      let useGeneratedImage = false;
 
       if (config.embed_template) {
         try {
           const parsed = typeof config.embed_template === 'string' ? JSON.parse(config.embed_template) : config.embed_template;
-          if (parsed.useGeneratedImage === false || parsed.use_generated_image === false) useGeneratedImage = false;
+          if (parsed.useGeneratedImage === true || parsed.use_generated_image === true) useGeneratedImage = true;
           delete parsed.useGeneratedImage;
           delete parsed.use_generated_image;
 
@@ -142,7 +150,7 @@ export default {
           files.push({ attachment: generated.buffer, name: generated.name });
           embed.setImage(`attachment://${generated.name}`);
         } catch (err) {
-          logger.warn('No se pudo crear la imagen de bienvenida:', err);
+          logger.warn('No se pudo crear la imagen de bienvenida (canvas no disponible o error):', err.message || err);
         }
       }
 
