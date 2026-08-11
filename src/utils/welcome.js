@@ -1,5 +1,4 @@
-// welcome.js
-
+// Utilities for welcome templates and validation
 import { logger } from './logger.js';
 
 const DEFAULT_TEMPLATES = {
@@ -22,8 +21,84 @@ export function truncateForEmbedField(value, maxLength = 1024) {
     return text.length <= maxLength ? text : `${text.slice(0, maxLength - 1)}…`;
 }
 
+export function isValidUrl(value) {
+    if (!value || typeof value !== 'string') return false;
+    try {
+        const u = new URL(value);
+        return u.protocol === 'http:' || u.protocol === 'https:';
+    } catch (e) {
+        return false;
+    }
+}
+
+export function sanitizeEmbedTemplate(template) {
+    // Allow only a safe subset of embed fields; sanitize lengths and urls
+    if (!template || typeof template !== 'object') return null;
+
+    const out = {};
+
+    if (template.title && typeof template.title === 'string') out.title = truncateForEmbedField(template.title, 256);
+    if (template.description && typeof template.description === 'string') out.description = truncateForEmbedField(template.description, 4096);
+
+    if (template.url && isValidUrl(template.url)) out.url = template.url;
+
+    if (template.color) {
+        // Accept hex string (#xxxxxx) or integer
+        if (typeof template.color === 'string' && template.color.startsWith('#')) {
+            const parsed = parseInt(template.color.replace('#', ''), 16);
+            if (!Number.isNaN(parsed)) out.color = parsed;
+        } else if (Number.isInteger(template.color)) {
+            out.color = template.color;
+        }
+    }
+
+    if (template.thumbnail && template.thumbnail.url && typeof template.thumbnail.url === 'string') {
+        if (isValidUrl(template.thumbnail.url) || template.thumbnail.url.includes('{user.avatar}')) out.thumbnail = { url: template.thumbnail.url };
+    }
+
+    if (template.image && template.image.url && typeof template.image.url === 'string') {
+        if (isValidUrl(template.image.url) || template.image.url.includes('{user.avatar}')) out.image = { url: template.image.url };
+    }
+
+    if (template.author && typeof template.author === 'object' && template.author.name) {
+        out.author = { name: truncateForEmbedField(String(template.author.name), 256) };
+        if (template.author.icon_url && isValidUrl(template.author.icon_url)) out.author.icon_url = template.author.icon_url;
+        if (template.author.url && isValidUrl(template.author.url)) out.author.url = template.author.url;
+    }
+
+    if (template.footer && typeof template.footer === 'object' && template.footer.text) {
+        out.footer = { text: truncateForEmbedField(String(template.footer.text), 2048) };
+        if (template.footer.icon_url && isValidUrl(template.footer.icon_url)) out.footer.icon_url = template.footer.icon_url;
+    }
+
+    if (Array.isArray(template.fields)) {
+        out.fields = [];
+        for (const f of template.fields.slice(0, 25)) {
+            if (!f || typeof f !== 'object') continue;
+            const name = truncateForEmbedField(String(f.name ?? ''));
+            const value = truncateForEmbedField(String(f.value ?? ''));
+            const inline = Boolean(f.inline);
+            if (name && value) out.fields.push({ name, value, inline });
+        }
+    }
+
+    if (Array.isArray(template.components)) {
+        // keep as-is; components are validated when building ActionRows
+        out.components = template.components;
+    }
+
+    if (template.timestamp === true || template.timestamp === 'now' || (typeof template.timestamp === 'string' && !Number.isNaN(Date.parse(template.timestamp)))) {
+        out.timestamp = template.timestamp;
+    }
+
+    if (template.useGeneratedImage === true || template.use_generated_image === true) {
+        out.useGeneratedImage = true;
+    }
+
+    return out;
+}
+
 export function formatWelcomeMessage(message, data) {
-    
     if (typeof message !== 'string') return '';
     if (!message) return '';
     if (!data || typeof data !== 'object') return message;
@@ -52,7 +127,8 @@ export function formatWelcomeMessage(message, data) {
         '{guild.id}': guild?.id || 'unknown',
         '{guild.memberCount}': guild?.memberCount?.toString?.() || '0',
         '{memberCount}': guild?.memberCount?.toString?.() || '0',
-        '{membercount}': guild?.memberCount?.toString?.() || '0'
+        '{membercount}': guild?.memberCount?.toString?.() || '0',
+        '{user.avatar}': user?.displayAvatarURL?.({ extension: 'png', size: 512 }) || ''
     };
 
     let result = message;
